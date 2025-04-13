@@ -5,12 +5,13 @@
          version="4.0">
     
     <servlet>
-        <servlet-name>StudentApplication</servlet-name>
+        <servlet-name>BookStoreApplication</servlet-name>
         <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
         <init-param>
             <param-name>jersey.config.server.provider.packages</param-name>
-            <param-value>com.example.resource,com.example.exception</param-value>
+            <param-value>com.bookstore.resource,com.bookstore.exception</param-value>
         </init-param>
+
         <load-on-startup>1</load-on-startup>
     </servlet>
 
