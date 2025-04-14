@@ -4,8 +4,11 @@
  */
 package com.bookstore.model;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -13,58 +16,44 @@ import java.util.List;
  */
 public class Order {
     private int id;
-    private Customer customer;
-    private List<Book> books;
-    private Date orderDate;
-    private double totalAmount;
+    private int customerId;
+    private List<Book> books = new ArrayList<>();
+    private Map<Integer, Integer> quantities = new HashMap<>();
+    private double total;
+    private Date date;
 
-    public Order() {
-    }
+    public Order() {}
 
-    public Order(Customer customer, List<Book> books, double totalAmount) {
-        this.customer = customer;
+    public Order(int id, int customerId, List<Book> books, Map<Integer, Integer> quantities, double total, Date date) {
+        this.id = id;
+        this.customerId = customerId;
         this.books = books;
-        this.orderDate = new Date();
-        this.totalAmount = totalAmount;
+        this.quantities = quantities;
+        this.total = total;
+        this.date = date;
     }
 
     public int getId() {
         return id;
     }
 
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public Customer getCustomer() {
-        return customer;
-    }
-
-    public void setCustomer(Customer customer) {
-        this.customer = customer;
+    public int getCustomerId() {
+        return customerId;
     }
 
     public List<Book> getBooks() {
         return books;
     }
 
-    public void setBooks(List<Book> books) {
-        this.books = books;
+    public Map<Integer, Integer> getQuantities() {
+        return quantities;
     }
 
-    public Date getOrderDate() {
-        return orderDate;
+    public double getTotal() {
+        return total;
     }
 
-    public void setOrderDate(Date orderDate) {
-        this.orderDate = orderDate;
-    }
-
-    public double getTotalAmount() {
-        return totalAmount;
-    }
-
-    public void setTotalAmount(double totalAmount) {
-        this.totalAmount = totalAmount;
+    public Date getDate() {
+        return date;
     }
 }

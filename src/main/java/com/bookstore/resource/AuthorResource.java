@@ -7,7 +7,7 @@ package com.bookstore.resource;
 import com.bookstore.exception.AuthorNotFoundException;
 import com.bookstore.exception.InvalidInputException;
 import com.bookstore.model.Author;
-import com.bookstore.model.Book;
+import com.bookstore.response.ApiResponse;
 import java.util.ArrayList;
 import java.util.List;
 import javax.ws.rs.Consumes;
@@ -31,11 +31,11 @@ import org.slf4j.LoggerFactory;
 public class AuthorResource {
     private static final Logger logger = LoggerFactory.getLogger(AuthorResource.class);
     private static final List<Author> authors = new ArrayList<>();
-    private static int nextId = 3;
+    private static int nextId = 0;
     
     static {
-        authors.add(new Author(1, "J.K. Rowling", "British author and philanthropist"));
-        authors.add(new Author(2, "George R.R. Martin", "American author"));
+        authors.add(new Author(nextId++, "J.K. Rowling", "British author and philanthropist"));
+        authors.add(new Author(nextId++, "George R.R. Martin", "American author"));
     }
     
     static List<Author> getAllAuthorsStatic() {
@@ -101,7 +101,8 @@ public class AuthorResource {
             throw new AuthorNotFoundException("Author with ID " + authorId + " not found for deletion");
         }
         logger.info("Deleted author with ID: {}", authorId);
-        return Response.ok("Author deleted successfully with ID: " + authorId).build();
+        ApiResponse response = new ApiResponse("Author deleted successfully with ID:: " + authorId);
+        return Response.ok(response).build();
     }
 
     private void validateAuthor(Author author) {

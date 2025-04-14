@@ -5,7 +5,9 @@
 
 package com.bookstore.model;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -13,41 +15,36 @@ import java.util.Map;
  * @author kavin
  */
 public class Cart {
-    private int id;
-    private Customer customer;
-    private Map<Book, Integer> items;
+    private int customerId;
+    private List<Book> books = new ArrayList<>();
+    private Map<Integer, Integer> quantities = new HashMap<>(); // bookId -> quantity
 
-    public Cart() {
-        this.items = new HashMap<>();
+    public Cart() {}
+
+    public Cart(int customerId) {
+        this.customerId = customerId;
     }
 
-    public Cart(int id, Customer customer) {
-        this.id = id;
-        this.customer = customer;
-        this.items = new HashMap<>();
+    public int getCustomerId() {
+        return customerId;
     }
 
-    public int getId() {
-        return id;
+    public List<Book> getBooks() {
+        return books;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public Map<Integer, Integer> getQuantities() {
+        return quantities;
     }
 
-    public Customer getCustomer() {
-        return customer;
+    public void addBook(Book book, int quantity) {
+        books.removeIf(b -> b.getId() == book.getId());
+        books.add(book);
+        quantities.put(book.getId(), quantity);
     }
 
-    public void setCustomer(Customer customer) {
-        this.customer = customer;
-    }
-
-    public Map<Book, Integer> getItems() {
-        return items;
-    }
-
-    public void setItems(Map<Book, Integer> items) {
-        this.items = items;
+    public void removeBook(int bookId) {
+        books.removeIf(b -> b.getId() == bookId);
+        quantities.remove(bookId);
     }
 }

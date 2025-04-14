@@ -33,12 +33,12 @@ public class BookResource {
 
     private static final Logger logger = LoggerFactory.getLogger(BookResource.class);
     private static final List<Book> books = new ArrayList<>();
-    private static int nextId = 3;
+    private static int nextId = 0;
 
     static {
         List<Author> authors = AuthorResource.getAllAuthorsStatic();
-        books.add(new Book(1, "Harry Potter", authors.get(0).getId(), "123-456-789-10112", 1997, 1000, 20));
-        books.add(new Book(2, "Song Of Ice And Fire", authors.get(1).getId(), "123-456-789-10112", 1996, 1500, 30));
+        books.add(new Book(nextId++, "Harry Potter", authors.get(0).getId(), "123-456-789-10112", 1997, 1000, 20));
+        books.add(new Book(nextId++, "Song Of Ice And Fire", authors.get(1).getId(), "123-456-789-10112", 1996, 1500, 30));
     }
 
     static List<Book> getAllBooksStatic() {
