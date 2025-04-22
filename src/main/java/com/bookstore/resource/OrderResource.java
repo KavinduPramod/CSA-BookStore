@@ -33,61 +33,72 @@ public class OrderResource {
 
     private static final Logger logger = LoggerFactory.getLogger(OrderResource.class);
     private static final Map<Integer, List<Order>> ordersByCustomer = new HashMap<>();
-    private static int nextOrderId = 0;
+    private static int nextOrderId = 1;
 
     static {
         List<Book> books = BookResource.getAllBooksStatic();
-        if (books.size() >= 2) {
-            Book book1 = books.get(0);
-            Book book2 = books.get(1);
+        Book book1 = books.get(0);
+        Book book2 = books.get(1);
 
-            Map<Integer, Integer> quantities = new HashMap<>();
-            quantities.put(book1.getId(), 1);
-            quantities.put(book2.getId(), 2);
+        Map<Integer, Integer> quantities = new HashMap<>();
+        quantities.put(book1.getId(), 1);
+        quantities.put(book2.getId(), 2);
 
-            double total = book1.getPrice() + 2 * book2.getPrice();
-            List<Book> orderedBooks = List.of(book1, book2);
+        double total = book1.getPrice() + 2 * book2.getPrice();
+        List<Book> orderedBooks = List.of(book1, book2);
 
-            Order initialOrder = new Order(
-                    nextOrderId++,
-                    1,
-                    new ArrayList<>(orderedBooks),
-                    quantities,
-                    total,
-                    new Date()
-            );
+        Order initialOrder = new Order(
+                nextOrderId++,
+                1,
+                new ArrayList<>(orderedBooks),
+                quantities,
+                total,
+                new Date()
+        );
 
-            ordersByCustomer.put(2, new ArrayList<>(List.of(initialOrder)));
+        ordersByCustomer.put(2, new ArrayList<>(List.of(initialOrder)));
 
-            // Update stock
-            book1.setStockQuantity(book1.getStockQuantity() - 1);
-            book2.setStockQuantity(book2.getStockQuantity() - 2);
-        }
+        // Update stock
+        book1.setStockQuantity(book1.getStockQuantity() - 1);
+        book2.setStockQuantity(book2.getStockQuantity() - 2);
     }
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     public Response placeOrder(@PathParam("customerId") int customerId) {
+        logger.info("POST request to place order for customer ID: {}", customerId);
+
         Cart cart = CartResource.getCartForCustomer(customerId);
         if (cart == null || cart.getBooks().isEmpty()) {
-            throw new InvalidInputException("Cart is empty");
+            logger.warn("Attempted to place order with empty cart for customer ID: {}", customerId);
+            throw new InvalidInputException("Cart is empty for customer ID: " + customerId);
         }
 
         double total = 0;
+        Map<Integer, Integer> cartQuantities = cart.getQuantities();
+        List<Book> booksToOrder = new ArrayList<>();
+
         for (Book book : cart.getBooks()) {
-            int quantity = cart.getQuantities().get(book.getId());
+            int quantity = cartQuantities.get(book.getId());
             if (book.getStockQuantity() < quantity) {
-                throw new OutOfStockException("Book " + book.getTitle() + " is out of stock");
+                logger.warn("Book '{}' is out of stock for requested quantity: {}", book.getTitle(), quantity);
+                throw new OutOfStockException("Book '" + book.getTitle() + "' is out of stock");
             }
             total += quantity * book.getPrice();
+            booksToOrder.add(book);
+        }
+
+        // Update stock after validation
+        for (Book book : booksToOrder) {
+            int quantity = cartQuantities.get(book.getId());
             book.setStockQuantity(book.getStockQuantity() - quantity);
         }
 
         Order order = new Order(
                 nextOrderId++,
                 customerId,
-                new ArrayList<>(cart.getBooks()),
-                new HashMap<>(cart.getQuantities()),
+                new ArrayList<>(booksToOrder),
+                new HashMap<>(cartQuantities),
                 total,
                 new Date()
         );
@@ -95,15 +106,18 @@ public class OrderResource {
         ordersByCustomer.computeIfAbsent(customerId, k -> new ArrayList<>()).add(order);
         CartResource.clearCart(customerId);
 
+        logger.info("Order placed successfully with ID: {} for customer ID: {}", order.getId(), customerId);
         return Response.status(Response.Status.CREATED).entity(order).build();
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getOrders(@PathParam("customerId") int customerId) {
+        logger.info("GET request for all orders of customer ID: {}", customerId);
         List<Order> orders = ordersByCustomer.get(customerId);
-        if (orders == null) {
-            throw new OutOfStockException("No orders found for customer " + customerId);
+        if (orders == null || orders.isEmpty()) {
+            logger.warn("No orders found for customer ID: {}", customerId);
+            throw new OutOfStockException("No orders found for customer ID: " + customerId);
         }
         return Response.ok(orders).build();
     }
@@ -112,13 +126,18 @@ public class OrderResource {
     @Path("/{orderId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getOrderById(@PathParam("customerId") int customerId,
-                                 @PathParam("orderId") int orderId) {
-        return ordersByCustomer.getOrDefault(customerId, new ArrayList<>()).stream()
+            @PathParam("orderId") int orderId) {
+        logger.info("GET request for order ID: {} of customer ID: {}", orderId, customerId);
+
+        List<Order> customerOrders = ordersByCustomer.getOrDefault(customerId, new ArrayList<>());
+        return customerOrders.stream()
                 .filter(o -> o.getId() == orderId)
                 .findFirst()
                 .map(Response::ok)
-                .orElseThrow(() -> new InvalidInputException("Order not found"))
+                .orElseThrow(() -> {
+                    logger.warn("Order ID: {} not found for customer ID: {}", orderId, customerId);
+                    return new InvalidInputException("Order with ID " + orderId + " not found for customer ID: " + customerId);
+                })
                 .build();
     }
 }
-

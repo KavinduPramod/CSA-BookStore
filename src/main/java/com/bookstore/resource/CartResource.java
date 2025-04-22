@@ -6,6 +6,7 @@ package com.bookstore.resource;
 
 import com.bookstore.exception.BookNotFoundException;
 import com.bookstore.exception.CartNotFoundException;
+import com.bookstore.exception.InvalidInputException;
 import com.bookstore.exception.OutOfStockException;
 import com.bookstore.model.Book;
 import com.bookstore.model.Cart;
@@ -38,12 +39,22 @@ public class CartResource {
 
     static {
         List<Book> books = BookResource.getAllBooksStatic();
-        if (books.size() >= 2) {
             Cart cart = new Cart(1);
             cart.addBook(books.get(0), 1); // 1 copy of book 0
             cart.addBook(books.get(1), 2); // 2 copies of book 1
+            cartMap.put(0, cart);
             cartMap.put(1, cart);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getCart(@PathParam("customerId") int customerId) {
+        logger.info("GET request for cart of customer ID: {}", customerId);
+        Cart cart = cartMap.get(customerId);
+        if (cart == null) {
+            throw new CartNotFoundException("Cart not found for customer ID: " + customerId);
         }
+        return Response.ok(cart).build();
     }
 
     @POST
@@ -51,20 +62,24 @@ public class CartResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response addItemJson(@PathParam("customerId") int customerId, Map<String, Object> payload) {
-        int bookId = (int) payload.get("bookId");
-        int quantity = (int) payload.get("quantity");
+        logger.info("POST request to add item to cart for customer ID: {}", customerId);
+
+        int bookId = getIntValue(payload, "bookId");
+        int quantity = getIntValue(payload, "quantity");
 
         Book book = BookResource.getAllBooksStatic().stream()
                 .filter(b -> b.getId() == bookId)
                 .findFirst()
-                .orElseThrow(() -> new BookNotFoundException("Book not found"));
+                .orElseThrow(() -> new BookNotFoundException("Book with ID " + bookId + " not found"));
 
         if (book.getStockQuantity() < quantity) {
-            throw new OutOfStockException("Not enough stock");
+            throw new OutOfStockException("Not enough stock for book ID: " + bookId);
         }
 
         Cart cart = cartMap.computeIfAbsent(customerId, Cart::new);
         cart.addBook(book, quantity);
+
+        logger.info("Added book ID {} x{} to cart for customer ID {}", bookId, quantity, customerId);
         return Response.ok(cart).build();
     }
 
@@ -73,35 +88,27 @@ public class CartResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateItemJson(@PathParam("customerId") int customerId,
-            @PathParam("bookId") int bookId,
-            Map<String, Object> payload) {
-        int quantity = (int) payload.get("quantity");
+                                   @PathParam("bookId") int bookId,
+                                   Map<String, Object> payload) {
+        logger.info("PUT request to update book ID {} in cart for customer ID: {}", bookId, customerId);
+        int quantity = getIntValue(payload, "quantity");
 
         Cart cart = cartMap.get(customerId);
         if (cart == null) {
-            throw new CartNotFoundException("Cart not found");
+            throw new CartNotFoundException("Cart not found for customer ID: " + customerId);
         }
 
         Book book = cart.getBooks().stream()
                 .filter(b -> b.getId() == bookId)
                 .findFirst()
-                .orElseThrow(() -> new BookNotFoundException("Book not found in cart"));
+                .orElseThrow(() -> new BookNotFoundException("Book with ID " + bookId + " not found in cart"));
 
         if (book.getStockQuantity() < quantity) {
-            throw new OutOfStockException("Not enough stock to update");
+            throw new OutOfStockException("Not enough stock to update book ID: " + bookId);
         }
 
-        cart.addBook(book, quantity);
-        return Response.ok(cart).build();
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getCart(@PathParam("customerId") int customerId) {
-        Cart cart = cartMap.get(customerId);
-        if (cart == null) {
-            throw new CartNotFoundException("Cart not found");
-        }
+        cart.updateBookQuantity(bookId, quantity);
+        logger.info("Updated book ID {} to quantity {} in cart for customer ID: {}", bookId, quantity, customerId);
         return Response.ok(cart).build();
     }
 
@@ -109,16 +116,15 @@ public class CartResource {
     @Path("/items/{bookId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response removeItem(@PathParam("customerId") int customerId,
-            @PathParam("bookId") int bookId) {
+                               @PathParam("bookId") int bookId) {
+        logger.info("DELETE request to remove book ID {} from cart of customer ID: {}", bookId, customerId);
         Cart cart = cartMap.get(customerId);
         if (cart == null) {
-            throw new CartNotFoundException("Cart not found");
+            throw new CartNotFoundException("Cart not found for customer ID: " + customerId);
         }
-        cart.removeBook(bookId);
-        
-        ApiResponse response = new ApiResponse("Removed the book from the cart with ID: " + bookId);
-        
-        return Response.ok(response).build();
+
+        cart.removeBook(bookId); // silently does nothing if book not in cart
+        return Response.ok(new ApiResponse("Removed the book from the cart with ID: " + bookId)).build();
     }
 
     public static Cart getCartForCustomer(int customerId) {
@@ -127,5 +133,19 @@ public class CartResource {
 
     public static void clearCart(int customerId) {
         cartMap.remove(customerId);
+    }
+
+    // Helper to validate and safely extract integers from JSON payloads
+    private int getIntValue(Map<String, Object> payload, String key) {
+        if (!payload.containsKey(key)) {
+            throw new InvalidInputException("Missing required field: " + key);
+        }
+
+        Object value = payload.get(key);
+        if (!(value instanceof Number)) {
+            throw new InvalidInputException("Field '" + key + "' must be a number");
+        }
+
+        return ((Number) value).intValue();
     }
 }

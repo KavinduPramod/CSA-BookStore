@@ -32,15 +32,18 @@ public class CustomerResource {
 
     private static final Logger logger = LoggerFactory.getLogger(CustomerResource.class);
     private static final List<Customer> customers = new ArrayList<>();
-    private static int nextId = 0;
+    private static int nextId = 1;
 
     static {
         customers.add(new Customer(nextId++, "John Doe", "john@example.com", "password123"));
         customers.add(new Customer(nextId++, "Jane Smith", "jane@example.com", "securepass"));
     }
 
-    static List<Customer> getAllCustomersStatic() {
-        return customers;
+    static Customer getCustomerByEmail(String email) {
+        return customers.stream()
+                .filter(c -> c.getEmail().equalsIgnoreCase(email))
+                .findFirst()
+                .orElse(null);
     }
 
     @GET
@@ -65,7 +68,7 @@ public class CustomerResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response addCustomer(Customer customer) {
-        validateCustomer(customer);
+        validateCustomer(customer, true);
         customer.setId(nextId++);
         customers.add(customer);
         logger.info("Added new customer with ID: {}", customer.getId());
@@ -79,7 +82,7 @@ public class CustomerResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateCustomer(@PathParam("customerId") int customerId, Customer updatedCustomer) {
-        validateCustomer(updatedCustomer);
+        validateCustomer(updatedCustomer, false);
         logger.info("PUT request to update customer with ID: {}", customerId);
         for (int i = 0; i < customers.size(); i++) {
             if (customers.get(i).getId() == customerId) {
@@ -105,15 +108,30 @@ public class CustomerResource {
         return Response.ok(new ApiResponse("Customer deleted successfully with ID: " + customerId)).build();
     }
 
-    private void validateCustomer(Customer customer) {
-        if (customer == null || customer.getName() == null || customer.getName().isEmpty()) {
+    private void validateCustomer(Customer customer, boolean isNewCustomer) {
+        if (customer == null) {
+            throw new InvalidInputException("Customer cannot be null");
+        }
+
+        if (customer.getName() == null || customer.getName().trim().isEmpty()) {
             throw new InvalidInputException("Customer name cannot be null or empty");
         }
-        if (customer.getEmail() == null || customer.getEmail().isEmpty()) {
+
+        if (customer.getEmail() == null || customer.getEmail().trim().isEmpty()) {
             throw new InvalidInputException("Customer email cannot be null or empty");
         }
+
+        if (!customer.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            throw new InvalidInputException("Customer email is not valid");
+        }
+
+        if (isNewCustomer && getCustomerByEmail(customer.getEmail()) != null) {
+            throw new InvalidInputException("Email already exists");
+        }
+
         if (customer.getPassword() == null || customer.getPassword().length() < 6) {
             throw new InvalidInputException("Password must be at least 6 characters");
         }
     }
 }
+

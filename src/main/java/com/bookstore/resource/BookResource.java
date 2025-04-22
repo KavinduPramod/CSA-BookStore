@@ -33,12 +33,12 @@ public class BookResource {
 
     private static final Logger logger = LoggerFactory.getLogger(BookResource.class);
     private static final List<Book> books = new ArrayList<>();
-    private static int nextId = 0;
+    private static int nextId = 1;
 
     static {
         List<Author> authors = AuthorResource.getAllAuthorsStatic();
         books.add(new Book(nextId++, "Harry Potter", authors.get(0).getId(), "123-456-789-10112", 1997, 1000, 20));
-        books.add(new Book(nextId++, "Song Of Ice And Fire", authors.get(1).getId(), "123-456-789-10112", 1996, 1500, 30));
+        books.add(new Book(nextId++, "Song Of Ice And Fire", authors.get(1).getId(), "123-456-789-10113", 1996, 1500, 30));
     }
 
     static List<Book> getAllBooksStatic() {
@@ -60,13 +60,13 @@ public class BookResource {
         return books.stream()
                 .filter(book -> book.getId() == bookId)
                 .findFirst()
-                .orElseThrow(() -> new BookNotFoundException("book with ID " + bookId + " not found"));
+                .orElseThrow(() -> new BookNotFoundException("Book with ID " + bookId + " not found"));
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response addStudent(Book book) {
+    public Response addBook(Book book) {
         validateBook(book);
         book.setId(nextId++);
         books.add(book);
@@ -101,7 +101,7 @@ public class BookResource {
         logger.info("DELETE request for book with ID: {}", bookId);
         boolean removed = books.removeIf(book -> book.getId() == bookId);
         if (!removed) {
-            throw new BookNotFoundException("book with ID " + bookId + " not found for deletion");
+            throw new BookNotFoundException("Book with ID " + bookId + " not found for deletion");
         }
         logger.info("Deleted book with ID: {}", bookId);
         ApiResponse response = new ApiResponse("Book deleted successfully with ID: " + bookId);
@@ -109,11 +109,14 @@ public class BookResource {
     }
 
     private void validateBook(Book book) {
-        if (book == null || book.getTitle() == null || book.getTitle().isEmpty()) {
+        if (book == null) {
+            throw new InvalidInputException("Book cannot be null");
+        }
+        if (book.getTitle() == null || book.getTitle().trim().isEmpty()) {
             throw new InvalidInputException("Book title cannot be null or empty");
         }
-        if (book.getAuthor() <= 0) {
-            throw new InvalidInputException("Invalid author ID");
+        if (book.getAuthor() <= 0 || !authorExists(book.getAuthor())) {
+            throw new InvalidInputException("Author with ID " + book.getAuthor() + " does not exist");
         }
         if (book.getPublicationYear() <= 0) {
             throw new InvalidInputException("Invalid publication year");
@@ -122,7 +125,13 @@ public class BookResource {
             throw new InvalidInputException("Price cannot be negative");
         }
         if (book.getStockQuantity() < 0) {
-            throw new InvalidInputException("Stock cannot be negative");
+            throw new InvalidInputException("Stock quantity cannot be negative");
         }
+    }
+
+    private boolean authorExists(int authorId) {
+        return AuthorResource.getAllAuthorsStatic()
+                .stream()
+                .anyMatch(author -> author.getId() == authorId);
     }
 }

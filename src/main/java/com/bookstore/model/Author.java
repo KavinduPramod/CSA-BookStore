@@ -38,7 +38,7 @@ public class Author {
         this.name = name;
     }
 
-    public String getBioGraphy() {
+    public String getBiography() {
         return bioGraphy;
     }
 

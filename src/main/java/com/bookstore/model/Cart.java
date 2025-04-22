@@ -5,6 +5,7 @@
 
 package com.bookstore.model;
 
+import com.bookstore.exception.BookNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,5 +47,13 @@ public class Cart {
     public void removeBook(int bookId) {
         books.removeIf(b -> b.getId() == bookId);
         quantities.remove(bookId);
+    }
+    
+        public void updateBookQuantity(int bookId, int quantity) {
+        if (quantities.containsKey(bookId)) {
+            quantities.put(bookId, quantity);
+        } else {
+            throw new BookNotFoundException("Book with ID " + bookId + " not found in cart");
+        }
     }
 }
