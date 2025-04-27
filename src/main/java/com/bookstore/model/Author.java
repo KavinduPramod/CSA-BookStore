@@ -11,7 +11,7 @@ package com.bookstore.model;
 public class Author {
     private int id;
     private String name;
-    private String bioGraphy;
+    private String biography;
 
     public Author() {
     }
@@ -19,7 +19,7 @@ public class Author {
     public Author(int id, String name, String bioGraphy) {
         this.id = id;
         this.name = name;
-        this.bioGraphy = bioGraphy;
+        this.biography = bioGraphy;
     }
 
     public int getId() {
@@ -39,10 +39,10 @@ public class Author {
     }
 
     public String getBiography() {
-        return bioGraphy;
+        return biography;
     }
 
     public void setBioGraphy(String bioGraphy) {
-        this.bioGraphy = bioGraphy;
+        this.biography = bioGraphy;
     }
 }

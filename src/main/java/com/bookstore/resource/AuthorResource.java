@@ -5,6 +5,7 @@
 package com.bookstore.resource;
 
 import com.bookstore.exception.AuthorNotFoundException;
+import com.bookstore.exception.BookNotFoundException;
 import com.bookstore.exception.InvalidInputException;
 import com.bookstore.model.Author;
 import com.bookstore.model.Book;
@@ -117,7 +118,12 @@ public class AuthorResource {
                 .stream()
                 .filter(book -> book.getAuthor() == authorId)
                 .collect(Collectors.toList());
-
+        
+        if (books.isEmpty()) {
+        logger.warn("No books found for author ID: {}", authorId);
+        throw new BookNotFoundException("No books found for author ID: " + authorId);
+    }
+            
         logger.info("Found {} book(s) for author ID: {}", books.size(), authorId);
         return Response.ok(books).build();
     }

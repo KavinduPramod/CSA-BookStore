@@ -1,10 +1,55 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Start Page</title>
+        <title>Book Store</title>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     </head>
     <body>
-        <h1>Hello World!</h1>
+        <h1>Welcome to Book Store API</h1>
+        <h4>Below are the endpoints that can be used to access the book store:</h4>
+        <p><strong>Base URL:</strong> <code>http://localhost:8080/bookstore/rest</code></p>
+
+        <h3>Books Endpoints</h3>
+        <ul>
+            <li><code>POST /books</code> - Create a new book</li>
+            <li><code>GET /books</code> - Get all books</li>
+            <li><code>GET /books/{id}</code> - Get a book by ID</li>
+            <li><code>PUT /books/{id}</code> - Update a book by ID</li>
+            <li><code>DELETE /books/{id}</code> - Delete a book by ID</li>
+        </ul>
+
+        <h3>Authors Endpoints</h3>
+        <ul>
+            <li><code>POST /authors</code> - Create a new author</li>
+            <li><code>GET /authors</code> - Get all authors</li>
+            <li><code>GET /authors/{id}</code> - Get an author by ID</li>
+            <li><code>PUT /authors/{id}</code> - Update an author by ID</li>
+            <li><code>DELETE /authors/{id}</code> - Delete an author by ID</li>
+            <li><code>GET /authors/{id}/books</code> - Get books by an author ID</li>
+        </ul>
+
+        <h3>Customers Endpoints</h3>
+        <ul>
+            <li><code>POST /customers</code> - Create a new customer</li>
+            <li><code>GET /customers</code> - Get all customers</li>
+            <li><code>GET /customers/{id}</code> - Get a customer by ID</li>
+            <li><code>PUT /customers/{id}</code> - Update a customer by ID</li>
+            <li><code>DELETE /customers/{id}</code> - Delete a customer by ID</li>
+        </ul>
+
+        <h3>Customer Cart Endpoints</h3>
+        <ul>
+            <li><code>POST /customers/{customerId}/cart/items</code> - Add an item to the cart</li>
+            <li><code>GET /customers/{customerId}/cart</code> - Get the cart of a customer</li>
+            <li><code>PUT /customers/{customerId}/cart/items/{bookId}</code> - Update an item in the cart</li>
+            <li><code>DELETE /customers/{customerId}/cart/items/{bookId}</code> - Remove an item from the cart</li>
+        </ul>
+
+        <h3>Customer Orders Endpoints</h3>
+        <ul>
+            <li><code>POST /customers/{customerId}/orders</code> - Create a new order</li>
+            <li><code>GET /customers/{customerId}/orders</code> - Get all orders of a customer</li>
+            <li><code>GET /customers/{customerId}/orders/{orderId}</code> - Get an order by order ID</li>
+        </ul>
     </body>
 </html>

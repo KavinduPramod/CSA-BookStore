@@ -4,6 +4,7 @@
  */
 package com.bookstore.resource;
 
+import com.bookstore.exception.CartNotFoundException;
 import com.bookstore.exception.InvalidInputException;
 import com.bookstore.exception.OutOfStockException;
 import com.bookstore.model.Book;
@@ -58,7 +59,6 @@ public class OrderResource {
 
         ordersByCustomer.put(2, new ArrayList<>(List.of(initialOrder)));
 
-        // Update stock
         book1.setStockQuantity(book1.getStockQuantity() - 1);
         book2.setStockQuantity(book2.getStockQuantity() - 2);
     }
@@ -71,7 +71,7 @@ public class OrderResource {
         Cart cart = CartResource.getCartForCustomer(customerId);
         if (cart == null || cart.getBooks().isEmpty()) {
             logger.warn("Attempted to place order with empty cart for customer ID: {}", customerId);
-            throw new InvalidInputException("Cart is empty for customer ID: " + customerId);
+            throw new CartNotFoundException("Cart is empty for customer ID: " + customerId);
         }
 
         double total = 0;
@@ -88,7 +88,6 @@ public class OrderResource {
             booksToOrder.add(book);
         }
 
-        // Update stock after validation
         for (Book book : booksToOrder) {
             int quantity = cartQuantities.get(book.getId());
             book.setStockQuantity(book.getStockQuantity() - quantity);
@@ -136,7 +135,7 @@ public class OrderResource {
                 .map(Response::ok)
                 .orElseThrow(() -> {
                     logger.warn("Order ID: {} not found for customer ID: {}", orderId, customerId);
-                    return new InvalidInputException("Order with ID " + orderId + " not found for customer ID: " + customerId);
+                    return new OutOfStockException("Order with ID " + orderId + " not found for customer ID: " + customerId);
                 })
                 .build();
     }

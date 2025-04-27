@@ -39,11 +39,11 @@ public class CartResource {
 
     static {
         List<Book> books = BookResource.getAllBooksStatic();
-            Cart cart = new Cart(1);
-            cart.addBook(books.get(0), 1); // 1 copy of book 0
-            cart.addBook(books.get(1), 2); // 2 copies of book 1
-            cartMap.put(0, cart);
-            cartMap.put(1, cart);
+        Cart cart = new Cart(1);
+        cart.addBook(books.get(0), 1); // 1 copy of book 0
+        cart.addBook(books.get(1), 2); // 2 copies of book 1
+        cartMap.put(0, cart);
+        cartMap.put(1, cart);
     }
 
     @GET
@@ -88,10 +88,14 @@ public class CartResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateItemJson(@PathParam("customerId") int customerId,
-                                   @PathParam("bookId") int bookId,
-                                   Map<String, Object> payload) {
+            @PathParam("bookId") int bookId,
+            Map<String, Object> payload) {
         logger.info("PUT request to update book ID {} in cart for customer ID: {}", bookId, customerId);
         int quantity = getIntValue(payload, "quantity");
+
+        if (payload == null) {
+            throw new InvalidInputException("Request body cannot be empty");
+        }
 
         Cart cart = cartMap.get(customerId);
         if (cart == null) {
@@ -116,14 +120,23 @@ public class CartResource {
     @Path("/items/{bookId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response removeItem(@PathParam("customerId") int customerId,
-                               @PathParam("bookId") int bookId) {
+            @PathParam("bookId") int bookId) {
         logger.info("DELETE request to remove book ID {} from cart of customer ID: {}", bookId, customerId);
         Cart cart = cartMap.get(customerId);
         if (cart == null) {
             throw new CartNotFoundException("Cart not found for customer ID: " + customerId);
         }
 
-        cart.removeBook(bookId); // silently does nothing if book not in cart
+        boolean bookExists = cart.getBooks().stream()
+                .anyMatch(b -> b.getId() == bookId);
+
+        if (!bookExists) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ApiResponse("Book with ID " + bookId + " not found in cart"))
+                    .build();
+        }
+
+        cart.removeBook(bookId);
         return Response.ok(new ApiResponse("Removed the book from the cart with ID: " + bookId)).build();
     }
 
@@ -135,7 +148,6 @@ public class CartResource {
         cartMap.remove(customerId);
     }
 
-    // Helper to validate and safely extract integers from JSON payloads
     private int getIntValue(Map<String, Object> payload, String key) {
         if (!payload.containsKey(key)) {
             throw new InvalidInputException("Missing required field: " + key);

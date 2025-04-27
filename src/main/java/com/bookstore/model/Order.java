@@ -4,6 +4,7 @@
  */
 package com.bookstore.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -20,6 +21,7 @@ public class Order {
     private List<Book> books = new ArrayList<>();
     private Map<Integer, Integer> quantities = new HashMap<>();
     private double total;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
     private Date date;
 
     public Order() {}
